@@ -1,0 +1,190 @@
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+GETTING STARTED WITH DOCKER
+
+# Pull docker image. Or do so through docker desktop
+sudo docker pull awkbr549/opensfm
+
+# Expose to local host and open
+sudo docker run -it --expose 8000 -p 8000:8000 awkbr549/opensfm
+
+# Build my own Docker container
+cd OpenSfm
+docker build -t mycontainer .
+
+# List all docker instances. Get IDs from here
+docker ps -a
+
+# List all images
+docker images
+
+# Start an instance not currently running
+docker start $ID
+
+# Connect docker instance to terminal and work within the container
+docker attach $ID
+
+# Move files between host and container
+docker cp HOST_FILE_PATH CONTAINER_ID:PATH_TO_DESTINATION
+
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+RUN OPENSFM OUTSIDE OF DOCKER
+
+
+# Specify dataset
+dataset=marsh_chapel_large
+
+# Local datase
+pdir=/Users/noahmarkowitz/Documents/Boston_University/Courses/2024_Spring/ImageProcessing_CAS-CS585/term_project
+local_datasets_path=${pdir}/datasets
+local_path=${local_datasets_path}/${dataset}
+
+#cp ${pdir}/camera_models.json ${local_path}/camera_models.json
+#cp ${pdir}/config.yml ${local_path}/config.yml
+
+# Specify host path
+host_path=/source/OpenSfM/data/${dataset}
+
+# Run full reconstruction
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm_run_all ${host_path}
+
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm undistort ${host_path}
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm compute_depthmaps ${host_path}
+
+# Get statistics and report
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm compute_statistics ${host_path}
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm export_report ${host_path}
+
+# Start server
+python server.py -d ${local_path}/${dataset}
+
+# Go to this url to view
+http://localhost:8080/
+
+
+# run with my python script
+dataset=cup
+python /Users/noahmarkowitz/Documents/Boston_University/Courses/2024_Spring/ImageProcessing_CAS-CS585/term_project/run_opensfm.py -d /Users/noahmarkowitz/Documents/Boston_University/Courses/2024_Spring/ImageProcessing_CAS-CS585/term_project/datasets/${dataset} -c getting-started
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+OPENSFM WITH SUBMODELS
+
+# make variables
+dataset=marsh_chapel_large
+local_datasets_path=/Users/noahmarkowitz/Documents/Boston_University/Courses/2024_Spring/ImageProcessing_CAS-CS585/term_project/datasets/
+local_path=${local_datasets_path}/${dataset}
+host_path=/source/OpenSfM/data/${dataset}
+
+cp ${pdir}/camera_models.json ${local_path}/camera_models.json
+cp ${pdir}/config.yml ${local_path}/config.yml
+
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm extract_metadata ${host_path}
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm detect_features ${host_path}
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm match_features ${host_path}
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm create_submodels ${host_path}
+
+for sm in {0000,0001,0002,0003,0004}; do
+  sm_local_path=${local_path}/submodels/submodel_${sm}
+  sm_host_path=${host_path}/submodels/submodel_${sm}
+  docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm create_tracks ${sm_host_path}
+  docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm reconstruct ${sm_host_path}
+done
+
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm align_submodels ${host_path}
+
+
+
+for sm in {0000,0001,0002,0003,0004}; do
+  sm_local_path=${local_path}/submodels/submodel_${sm}
+  sm_host_path=${host_path}/submodels/submodel_${sm}
+  docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm mesh ${sm_host_path}
+  docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm undistort ${sm_host_path}
+  docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm compute_depthmaps ${sm_host_path}
+done
+
+
+
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm mesh ${host_path}
+
+
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm undistort ${host_path}
+
+
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm compute_depthmaps ${host_path}
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+OPENSFM STEP BY STEP
+
+# Specify dataset
+dataset=marsh_chapel_step_by_step
+
+# Local datase
+pdir=/Users/noahmarkowitz/Documents/Boston_University/Courses/2024_Spring/ImageProcessing_CAS-CS585/term_project
+local_datasets_path=${pdir}/datasets
+local_path=${local_datasets_path}/${dataset}
+
+cp ${pdir}/camera_models.json ${local_path}/camera_models.json
+cp ${pdir}/config.yml ${local_path}/config.yml
+
+# Specify host path
+host_path=/source/OpenSfM/data/${dataset}
+
+
+# Creates exif/ and profile.log
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm extract_metadata ${host_path}
+
+# Creates features/, reports/features, reports/features/features.json
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm detect_features ${host_path}
+
+# Creates matches/, features/matches.json
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm match_features ${host_path}
+
+# Creates features/tracks.json, features/tracks.json, tracks.csv
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm create_tracks ${host_path}
+
+# Creates reconstruction.json, reports/reconstruction.json
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm reconstruct ${host_path}
+
+# Adjusts reconstruction.json, reports/reconstruction.json
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm bundle ${host_path}
+
+# Creates reconstruction.meshed.json
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm mesh ${host_path}
+
+# Creates undistorted/
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm undistort ${host_path}
+
+# Creates undistorted/depthmaps
+docker run --rm -v ${local_path}:${host_path} getting-started:latest /source/OpenSfM/bin/opensfm compute_depthmaps ${host_path}
+
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+
+OPENSFM BASICS (old version)
+
+# Run example dataset
+./bin/run_all data/berlin
+
+# Start server for viewing
+python -m SimpleHTTPServer
+
+# View by going to this url
+# http://localhost:8000/viewer/reconstruction.html#file=/data/berlin/reconstruction.meshed.json
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+OPENSFM CREATE MORE DENSE POINTCLOUD (old version)
+
+# undistorted is the first step
+bin/opensfm berlin/unidtorted/depthmaps
+
+# Compute depth maps
+bin/opensfm compute_depthmaps data/berlin
+
+# Will store more dense pointcloud here:
+data/berlin/unidtorted/depthmaps/merged.ply

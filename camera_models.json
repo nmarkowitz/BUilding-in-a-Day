@@ -1,0 +1,27 @@
+{
+    "v2 unknown unknown 1920 1080 perspective 0.0": {
+        "projection_type": "perspective",
+        "width": 1920,
+        "height": 1080,
+        "focal": 0.9269265887655496,
+        "k1": 0.24445661966040805,
+        "k2": -0.24729062518581557
+    },
+        "v2 apple iphone se (2nd generation) back camera 3.99mm f/1.8 4032 3024 perspective 0.7777": {
+            "projection_type": "perspective",
+            "width": 4032,
+            "height": 3024,
+            "focal": 0.9269265887655496,
+            "k1": 0.24445661966040805,
+            "k2": -0.24729062518581557
+    },
+        "noah_iphone_se": {
+            "projection_type": "perspective",
+            "width": 4032,
+            "height": 3024,
+            "focal": 0.9269265887655496,
+            "k1": 0.24445661966040805,
+            "k2": -0.24729062518581557
+        }
+    }
+}

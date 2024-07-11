@@ -1,0 +1,12 @@
+# https://opensfm.org/docs/_modules/opensfm/config.html
+
+feature_type: SIFT
+#feature_min_frames: 2000 
+
+
+# Params for SIFT
+#sift_peak_threshold: 0.1     # Smaller value -> more features
+#sift_edge_threshold: 10       # See OpenCV doc
+
+# Params for general matching
+#lowes_ratio: 0.7              # Ratio test for matches
